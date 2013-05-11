@@ -1,26 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
-		    <EditText
+    android:layout_height="0dp"
+		android:layout_weight=".5"
+    android:orientation="horizontal" >
+		<EditText
 				android:id="@+id/starting_ip_address"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				android:layout_gravity="top"
-				android:background="#c0caca"
 				android:digits="0123456789."
 				android:hint="@string/start_address_label"
+				android:background="@drawable/rounded_rectangle"
 				android:padding="5dp"
-		/>
+				android:layout_margin="10dp"
+				android:imeOptions="actionNext"
+				android:nextFocusDown="@+id/ending_ip_address"
+				android:singleLine="true"	/>
 		<EditText
 				android:id="@+id/ending_ip_address"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:background="#c0caca"
 				android:digits="0123456789."
 				android:gravity="top"
 				android:hint="@string/end_address_label"
+				android:layout_margin="10dp"
 				android:padding="5dp"
-		/>
-</LinearLayout>
+				android:background="@drawable/rounded_rectangle" />
+		
+		<Button 
+				android:text="Ping" 
+				android:textAlignment="center"
+				android:background="@drawable/ping_button_selector"
+				style="@style/ButtonText" />
+		 
+</LinearLayout>  
