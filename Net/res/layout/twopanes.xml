@@ -1,8 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical">
-
+    android:orientation="vertical" >
 		    <EditText
 				android:id="@+id/starting_ip_address"
 				android:layout_width="wrap_content"
@@ -11,7 +11,6 @@
 				android:background="#c0caca"
 				android:digits="0123456789."
 				android:hint="@string/start_address_label"
-				android:textAlignment="center"
 				android:padding="5dp"
 		/>
 		<EditText
@@ -22,7 +21,6 @@
 				android:digits="0123456789."
 				android:gravity="top"
 				android:hint="@string/end_address_label"
-				android:textAlignment="center"
 				android:padding="5dp"
 		/>
 </LinearLayout>

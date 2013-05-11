@@ -54,7 +54,7 @@ public class PingActivity extends Activity implements OnEditorActionListener
 
 		}
 
-		// Check whole ip addy:
+		// Check whole ip address:
 		private boolean validateIp(final String ip) { 
 				Log.i(TAG, " Validating: " + ip);
 				boolean result = false;
@@ -66,6 +66,7 @@ public class PingActivity extends Activity implements OnEditorActionListener
 
 		public void processIp(final String ip)
 		{
+			// To Do: Place the 4 tuple numbers into an array. 
 				if(validateIp(ip)) {	
 						// It is IP
 						Log.i(TAG, ip + " is a valid ip.");
