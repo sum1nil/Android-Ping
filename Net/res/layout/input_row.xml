@@ -30,6 +30,8 @@
 		
 		<Button 
 				android:text="Ping" 
+				android:layout_height="match_parent"
+				android:layout_width="wrap_content"
 				android:textAlignment="center"
 				android:background="@drawable/ping_button_selector"
 				style="@style/ButtonText" />
