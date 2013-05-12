@@ -30,12 +30,12 @@ public class IpListFragment extends ListFragment
                 android.R.layout.simple_list_item_activated_1 : android.R.layout.simple_list_item_1;
 
 						// Create an array adapter for the list view, using the Ipsum headlines array
-						la = new IpListAdapter(this.getView().getContext(), layout, android.R.id.text1, (ArrayList<InetAddress>)PingSweepActivity.getIpList());
+						la = new IpListAdapter(getActivity(), layout, android.R.id.text1, (ArrayList<InetAddress>)PingSweepActivity.getIpList());
 						setListAdapter(la);
 				}
 
 				@Override
-				public void onStart() {
+				public void onStart()  {
 						super.onStart();
 
 						// When in two-pane layout, set the listview to highlight the selected list item

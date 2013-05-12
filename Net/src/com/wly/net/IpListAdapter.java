@@ -40,7 +40,7 @@ private ArrayList<InetAddress> listData = null;
 
 				if(row == null) {
 						LayoutInflater li = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-						row = li.inflate(android.R.layout.simple_list_item_activated_1, null, false); 
+						row = li.inflate(layoutResourceId, null, false); 
 						holder = new ListHolder(); 
 						holder.address= (TextView) row.findViewById(android.R.id.text1);
 						holder.address.setText(listData.get(position).getHostAddress());

@@ -13,10 +13,10 @@ import java.util.*;
 import java.net.*;
 import android.support.v4.app.*;
 
-public class PingSweepActivity extends FragmentActivity implements OnEditorActionListener
+public class PingSweepActivity extends FragmentActivity implements OnEditorActionListener,  IpListFragment.OnIpSelectedListener
 {
 		private final int range = 255;
-	  private final  String TAG = "PingActivity";
+	  private final  String TAG = "PingSweepActivity";
     private EditText strtIpText = null;
     private EditText endIpText = null;
 		private int[] strtIpAddress = new int[4];
@@ -94,7 +94,37 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 			  return result;
 		}
 
+		public void onIpInfoSelected(int position) {
+        // The user selected the headline of an article from the HeadlinesFragment
 
+        // Capture the article fragment from the activity layout
+        IpInfoFragment ipInfoFrag = (IpInfoFragment)
+						getSupportFragmentManager().findFragmentById(R.id.ip_info_fragment);
+
+        if (ipInfoFrag != null) {
+            // If article frag is available, we're in two-pane layout...
+
+            // Call a method in the ArticleFragment to update its content
+            ipInfoFrag.updateIpInfoView((position));
+
+        } else {
+            // If the frag is not available, we're in the one-pane layout and must swap frags...
+
+            // Create fragment and give it an argument for the selected article
+            IpInfoFragment newFragment = new IpInfoFragment();
+            Bundle args = new Bundle();
+            args.putInt(IpInfoFragment.ARG_POSITION, position);
+            newFragment.setArguments(args);
+						// Replace whatever is in the fragment_container view with this fragment,
+            // and add the transaction to the back stack so the user can navigate back
+            // Commit the transaction
+            getSupportFragmentManager().beginTransaction().
+						replace(R.id.fragment_container, newFragment).addToBackStack(null).commit();
+
+            
+            
+        }
+		}
 
 		public void processIp(final String ip, int id)
 		{
@@ -149,12 +179,13 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 										break;
 									}
 								processIp(((EditText)v).getText().toString(),viewId);
+								
 						try
 						{
-								parseIpRange(strtIpAddress, endIpAddress);
+							 ipList = parseIpRange(strtIpAddress, endIpAddress);
 						}
 						catch (UnknownHostException e)
-						{}
+						{e.printStackTrace();}
 						return true; // consume
 						} 
 			 return false; // pass on to other listeners. 
