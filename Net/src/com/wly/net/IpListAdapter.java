@@ -20,7 +20,7 @@ private int layoutResourceId;
 private ArrayList<InetAddress> listData = null;
 
 		@Override public void notifyDataSetChanged() { 
-		Toast.makeText(this.getContext(), "data set changed", Toast.LENGTH_SHORT).show();
+		Toast.makeText(this.getContext(), "Data set has changed!", Toast.LENGTH_SHORT).show();
 
 		}
 

@@ -19,6 +19,7 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 	  private final  String TAG = "PingSweepActivity";
     private EditText strtIpText = null;
     private EditText endIpText = null;
+		private  Button pingButton = null;
 		private int[] strtIpAddress = new int[4];
 		private int[] endIpAddress = new int[4];
 		private static List<InetAddress> ipList = new ArrayList<InetAddress>();
@@ -30,13 +31,29 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
     public void onCreate(Bundle savedInstanceState)
 		{
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dual_pane);
+        setContentView(R.layout.ip_main);
+				
+				pingButton = (Button) findViewById(R.id.ping_button);
+				pingButton.setEnabled(false);
+				pingButton.setOnClickListener(new View.OnClickListener(){
+						@Override
+						public void onClick(View v) {
+								try
+								{
+										Toast.makeText(getApplicationContext(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
+										ipList = parseIpRange(strtIpAddress, endIpAddress);
+										updateAdapter();
+								}
+								catch (UnknownHostException e)
+								{ e.printStackTrace();}
+						}
+				});
 
 				strtIpText = (EditText) findViewById(R.id.starting_ip_address);
 				endIpText = (EditText) findViewById(R.id.ending_ip_address); 
 
 				InputFilter[] filters = new InputFilter[1];
-				filters[0] = new InputFilter() {
+				filters[0] = new InputFilter() { 
 						public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
 								if (end > start) {
 										String destTxt = dest.toString();
@@ -135,6 +152,8 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 								Log.i(TAG, ip + " is a valid ip.");
 								for(int j = 0; j < values.length; j++) 
 										strtIpAddress[j] = Integer.parseInt(values[j]);
+										
+					  pingButton.setEnabled(true);
 						}
 						if (endIpText.getId() == id) {
 								for(int j = 0; j < values.length; j++) 
@@ -180,16 +199,14 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 									}
 								processIp(((EditText)v).getText().toString(),viewId);
 								
-						try
-						{
-							 ipList = parseIpRange(strtIpAddress, endIpAddress);
-						}
-						catch (UnknownHostException e)
-						{e.printStackTrace();}
-						return true; // consume
+								return true; // consume
 						} 
 			 return false; // pass on to other listeners. 
 		}
+		private void updateAdapter() { 
+		IpListAdapter la = (IpListAdapter) ((IpListFragment) getSupportFragmentManager().findFragmentById(R.id.ip_list_fragment)).getListAdapter(); 
+		la.notifyDataSetInvalidated();
+		la.notifyDataSetChanged(); }
 
 }
  
