@@ -46,7 +46,7 @@ public class IpInfoFragment extends Fragment {
 
     public void updateIpInfoView(int position) {
         TextView ipInfo = (TextView) getActivity().findViewById(R.id.ip_info);
-        ipInfo.setText(String.valueOf(position));//  IpSummary.getSummary(position));            
+        ipInfo.setText(PingSweepActivity.getipInfoList().get(position).toString());            
 				mCurrentPosition = position;
     }
 

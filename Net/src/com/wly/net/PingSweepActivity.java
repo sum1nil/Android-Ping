@@ -12,7 +12,103 @@ import android.widget.TextView.*;
 import java.util.*;
 import java.net.*;
 import android.support.v4.app.*;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
+import android.content.*;
+import java.io.*;
+import java.util.concurrent.*;
+final class LoadIpsTask extends AsyncTask<String, Void, List<InetAddress>> { 
 
+		private String ip1 = null;
+		private String ip2 = null;
+		private List<InetAddress> addresses = new ArrayList<InetAddress>();
+		private int[] strtIpAddress = new int[4];
+		private int[] endIpAddress = new int[4];
+		
+@Override
+protected List<InetAddress> doInBackground(String... params) { 
+		ip1 = params[0];
+		ip2 = params[1];
+		// Create corresponding array of entries and load with ip adresses
+		String[] octets1 = {"0","0","0","0"};
+		String[] octets2 = {"0","0","0","0"};
+		octets1 = ip1.split("\\.");
+		if(ip2 != null) {
+			octets2 = ip2.split("\\.");
+			for(int j = 0; j < octets2.length; j++) 
+				endIpAddress[j] = Integer.parseInt(octets2[j]);
+		}
+				
+		for(int j = 0; j < octets1.length; j++) 
+		strtIpAddress[j] = Integer.parseInt(octets1[j]);
+	
+
+		if (octets2.length != 0) { //multiple IPs: ipRange = 172.31.229.240-172.31.229.250 
+
+				int lowerBound = strtIpAddress[3];
+				int upperBound = endIpAddress[3];
+
+				for (int i = lowerBound; i <= upperBound; i++) {
+						String ip = strtIpAddress[0] + "." + strtIpAddress[1] + "." + strtIpAddress[2] + "." + i;
+						try
+						{
+								addresses.add(InetAddress.getByName(ip));
+						}
+						catch (UnknownHostException e)
+						{ e.printStackTrace(); }
+				}
+		}
+		else { //single ip: ipRange = 172.31.229.240
+			 String ip = strtIpAddress[0] + "." + strtIpAddress[1] + strtIpAddress[2] + "." + strtIpAddress[3];
+				try
+				{
+						addresses.add(InetAddress.getByName(ip));
+				}
+				catch (UnknownHostException e)
+				{ e.printStackTrace(); }
+		}
+		return addresses;
+		
+} 
+@Override 
+protected void onPostExecute(List<InetAddress> result) { 
+			List<IpInfo> ipInfos = new ArrayList<IpInfo>();
+			int num = 0;
+			StringBuilder sb = new StringBuilder();
+			for(InetAddress in : result) {
+					try
+					{
+							if (in.isReachable(5000))
+							{ 
+									byte[] ip = in.getAddress();
+									for(int i = 0; i < ip.length; i++) {
+										sb.append(Byte.toString(ip[i]));
+										sb.append(".");
+										}
+									ipInfos.add(new IpInfo(sb.substring(0, sb.length() - 1), in.getCanonicalHostName(),
+									"Responded OK.", 0,0));
+							}
+							else
+							{ 
+									byte[] ip = in.getAddress();
+									for(int i = 0; i < ip.length; i++) {
+											sb.append(Byte.toString(ip[i]));
+											sb.append(".");
+									}
+									ipInfos.add(new IpInfo(sb.substring(0, sb.length() - 1), in.getCanonicalHostName(),
+																				 "No response: Time out", 0,0));
+							}
+					}
+					catch (IOException e)
+					{  e.printStackTrace(); } 
+			}
+	} 
+@Override 
+protected void onPreExecute() { } 
+@Override protected void onProgressUpdate(Void... values) { } 
+}
+		
 public class PingSweepActivity extends FragmentActivity implements OnEditorActionListener,  IpListFragment.OnIpSelectedListener
 {
 		private final int range = 255;
@@ -20,12 +116,12 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
     private EditText strtIpText = null;
     private EditText endIpText = null;
 		private  Button pingButton = null;
-		private int[] strtIpAddress = new int[4];
-		private int[] endIpAddress = new int[4];
+	  private String[] ips = new String[2];
 		private static List<InetAddress> ipList = new ArrayList<InetAddress>();
-	  public static List<InetAddress> getIpList() {
-				return ipList;
-		}
+	  public static List<InetAddress> getIpList() { return ipList;	}
+		private static List<IpInfo> ipInfoList = new ArrayList<IpInfo>();
+		public static void setIpInfoList(List<IpInfo> info) {ipInfoList = info;}
+		public static List<IpInfo> getipInfoList() { return ipInfoList; }
 		
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -38,14 +134,19 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 				pingButton.setOnClickListener(new View.OnClickListener(){
 						@Override
 						public void onClick(View v) {
+									Toast.makeText(getApplication(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
+									LoadIpsTask task = new LoadIpsTask();
+									task.execute(ips[0],ips[1]);
 								try
 								{
-										Toast.makeText(getApplicationContext(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
-										ipList = parseIpRange(strtIpAddress, endIpAddress);
-										updateAdapter();
+										ipList = task.get();
 								}
-								catch (UnknownHostException e)
-								{ e.printStackTrace();}
+								catch (ExecutionException e)
+								{ e.printStackTrace(); }
+								catch (InterruptedException e)
+								{ e.printStackTrace(); }
+								IpListFragment.setAdapterData(ipList);
+								updateAdapter();
 						}
 				});
 
@@ -143,66 +244,28 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
         }
 		}
 
-		public void processIp(final String ip, int id)
-		{
-			// To Do: Place the 4 tuple numbers into an array. 
-				if(validateIp(ip)) {
-						String[] values = ip.split("\\.");
-						if (strtIpText.getId() == id) {
-								Log.i(TAG, ip + " is a valid ip.");
-								for(int j = 0; j < values.length; j++) 
-										strtIpAddress[j] = Integer.parseInt(values[j]);
-										
-					  pingButton.setEnabled(true);
-						}
-						if (endIpText.getId() == id) {
-								for(int j = 0; j < values.length; j++) 
-										endIpAddress[j] = Integer.parseInt(values[j]);
-						}
-						
-				}
-				else { 
-						// It is not IP
-						Log.i(TAG, ip + " is not a valid ip ");
-			}
-		}
-
-		private static List<InetAddress> parseIpRange(int[] strtIp, int[] endIp) throws UnknownHostException {
-				List<InetAddress> addresses = new ArrayList<InetAddress>();
-        if (endIp.length != 0) { //multiple IPs: ipRange = 172.31.229.240-172.31.229.250 
-            
-            int lowerBound = strtIp[3];
-            int upperBound = endIp[3];
-
-            for (int i = lowerBound; i <= upperBound; i++) {
-                String ip = strtIp[0] + "." + strtIp[1] + "." + strtIp[2] + "." + i;
-                addresses.add(InetAddress.getByName(ip));
-            }
-        } else { //single ip: ipRange = 172.31.229.240
-						String ip = strtIp[0] + "." + strtIp[1] + strtIp[2] + "." + strtIp[3];
-            addresses.add(InetAddress.getByName(ip));
-        }
-        return addresses;
-    }
 		@Override 
 		public boolean onEditorAction(TextView v, int actionId, KeyEvent event) { 
 				if (actionId == EditorInfo.IME_ACTION_NEXT ) { 
 								// the user is done typing. 
+								if(validateIp(((EditText)v).getText().toString())) {
 								int viewId =  v.getId();
 								switch (viewId) {
 										case R.id.starting_ip_address:
+										  ips[0] = strtIpText.getText().toString();
+											pingButton.setEnabled(true);
 											endIpText.requestFocus();
 									 		break;
 										case R.id.ending_ip_address:
-											
+											ips[1] = endIpText.getText().toString();
 										break;
 									}
-								processIp(((EditText)v).getText().toString(),viewId);
-								
-								return true; // consume
+									return true; // consume
 						} 
-			 return false; // pass on to other listeners. 
+			 }
+				return false; // pass on to other listeners. 
 		}
+		
 		private void updateAdapter() { 
 		IpListAdapter la = (IpListAdapter) ((IpListFragment) getSupportFragmentManager().findFragmentById(R.id.ip_list_fragment)).getListAdapter(); 
 		la.notifyDataSetInvalidated();

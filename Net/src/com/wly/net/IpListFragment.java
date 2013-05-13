@@ -8,13 +8,19 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import java.util.*;
-import java.net.*;;  
+import java.net.*;
+import android.view.*;
+import android.widget.*;
+import android.graphics.*;;  
 
 public class IpListFragment extends ListFragment
 {
 		OnIpSelectedListener mCallback;
-		IpListAdapter la = null;		
-
+		
+		ListView lv = null;
+		static IpListAdapter la = null;		
+		int num = 1;
+		
 				// The container Activity must implement this interface so the frag can deliver messages
 				public interface OnIpSelectedListener {
 						/** Called by HeadlinesFragment when a list item is selected */
@@ -24,16 +30,27 @@ public class IpListFragment extends ListFragment
 				@Override
 				public void onCreate(Bundle savedInstanceState) {
 						super.onCreate(savedInstanceState);
+						System.out.println("IpListFragment.onCreate");
 
 						// We need to use a different list item layout for devices older than Honeycomb
-						int layout = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB ?
-                android.R.layout.simple_list_item_activated_1 : android.R.layout.simple_list_item_1;
+						int layout = R.layout.ip_list_view;
+            // Initially there is no data
+            //setEmptyText("No Data Here");
 
-						// Create an array adapter for the list view, using the Ipsum headlines array
-						la = new IpListAdapter(getActivity(), layout, android.R.id.text1, (ArrayList<InetAddress>)PingSweepActivity.getIpList());
+            // Create an empty adapter we will use to display the loaded data.
+						// An array adapter for the list view
+						la = new IpListAdapter(getActivity(), layout);//, (ArrayList<InetAddress>)PingSweepActivity.getIpList());
 						setListAdapter(la);
-				}
 
+            // Start out with a progress indicator.
+            //setListShown(false);
+						
+					//	Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB ?
+             //   android.R.layout.simple_list_item_activated_1 : android.R.layout.simple_list_item_1;
+
+				}
+				
+				
 				@Override
 				public void onStart()  {
 						super.onStart();
@@ -66,5 +83,9 @@ public class IpListFragment extends ListFragment
 
 						// Set the item as checked to be highlighted when in two-pane layout
 						getListView().setItemChecked(position, true);
+				}
+				
+				public static void setAdapterData(List<InetAddress> data) {
+						la.setData((ArrayList<InetAddress>)data);
 				}
 }
