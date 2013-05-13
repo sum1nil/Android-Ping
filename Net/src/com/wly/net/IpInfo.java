@@ -15,7 +15,7 @@ public class IpInfo
 			this.ttlLeft = ttlLeft;
 			this.hops = hops;
 	}
-	@Override
+	
 	public String ToString() { 
 		StringBuilder sb = new StringBuilder();
 		sb.append(response + "\n\n");

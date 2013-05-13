@@ -178,7 +178,7 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 				strtIpText.setOnEditorActionListener(this);
 				endIpText.setFilters(filters);
 				endIpText.setOnEditorActionListener(this);
-				
+
 				// Check whether the activity is using the layout version with
         // the fragment_container FrameLayout. If so, we must add the first fragment
         if (findViewById(R.id.fragment_container) != null) {
@@ -203,7 +203,13 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 				}
 
 		}
-
+    	@Override
+    	public void onResume() {
+    		super.onResume();
+			InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.showSoftInput(strtIpText, InputMethodManager.SHOW_IMPLICIT);
+    		
+    	}
 		// Check whole ip address:
 		private boolean validateIp(final String ip) { 
 				Log.i(TAG, " Validating: " + ip);
@@ -246,7 +252,7 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 
 		@Override 
 		public boolean onEditorAction(TextView v, int actionId, KeyEvent event) { 
-				if (actionId == EditorInfo.IME_ACTION_NEXT ) { 
+				if (actionId == EditorInfo.IME_ACTION_NEXT || actionId == EditorInfo.IME_ACTION_DONE) { 
 								// the user is done typing. 
 								if(validateIp(((EditText)v).getText().toString())) {
 								int viewId =  v.getId();
