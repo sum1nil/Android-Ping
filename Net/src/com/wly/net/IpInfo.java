@@ -2,11 +2,11 @@ package com.wly.net;
 
 public class IpInfo
 {
-	public String ip;
-	public String hostName;
-	public String response;
-	public int ttlLeft;
-	public int hops;
+	private String ip;
+	private String hostName;
+	private String response;
+	private int ttlLeft;
+	private int hops;
 	
 	public  IpInfo(String ip, String hostName, String response, int ttlLeft, int hops) {
 			this.ip = ip;
@@ -16,7 +16,8 @@ public class IpInfo
 			this.hops = hops;
 	}
 	
-	public String ToString() { 
+	@Override
+	public String toString() { 
 		StringBuilder sb = new StringBuilder();
 		sb.append(response + "\n\n");
 		sb.append("IP Address: " + ip + "\n");

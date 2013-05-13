@@ -12,42 +12,56 @@ import android.widget.TextView.*;
 import java.util.*;
 import java.net.*;
 import android.support.v4.app.*;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.content.*;
 import java.io.*;
 import java.util.concurrent.*;
-final class LoadIpsTask extends AsyncTask<String, Void, List<InetAddress>> { 
-
+import android.net.*;
+import android.net.wifi.*;
+import java.math.*;
+final class LoadIpsTask extends AsyncTask<String, Integer, List<InetAddress>> { 
+		private Context context;
+		private ConnectivityManager connManager;
+		private NetworkInterface nif;
 		private String ip1 = null;
 		private String ip2 = null;
 		private List<InetAddress> addresses = new ArrayList<InetAddress>();
 		private int[] strtIpAddress = new int[4];
 		private int[] endIpAddress = new int[4];
+		private ProgressDialog progressBar; 
+		private int progressBarStatus = 0;
+		private int ipsToScan = 0;
+		
+		public LoadIpsTask(Context context) {
+				this.context = context;
+				this.connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		}
 		
 @Override
 protected List<InetAddress> doInBackground(String... params) { 
+		
+		
 		ip1 = params[0];
 		ip2 = params[1];
-		// Create corresponding array of entries and load with ip adresses
-		String[] octets1 = {"0","0","0","0"};
-		String[] octets2 = {"0","0","0","0"};
-		octets1 = ip1.split("\\.");
+		String[] octets1 = null;
+		String[] octets2 = null;
+		
 		if(ip2 != null) {
-			octets2 = ip2.split("\\.");
-			for(int j = 0; j < octets2.length; j++) 
-				endIpAddress[j] = Integer.parseInt(octets2[j]);
-		}
-				
-		for(int j = 0; j < octets1.length; j++) 
-		strtIpAddress[j] = Integer.parseInt(octets1[j]);
-	
+				// Create corresponding array of entries and load with ip adresses
+				octets1 = ip1.split("\\.");
+				octets2 = ip2.split("\\.");
+				for(int j = 0; j < octets2.length; j++) 
+					endIpAddress[j] = Integer.parseInt(octets2[j]);
+				for(int j = 0; j < octets1.length; j++) 
+					strtIpAddress[j] = Integer.parseInt(octets1[j]);
+			}
 
-		if (octets2.length != 0) { //multiple IPs: ipRange = 172.31.229.240-172.31.229.250 
+		if (octets2 != null) { //multiple IPs: ipRange = 172.31.229.240-172.31.229.250 
 
 				int lowerBound = strtIpAddress[3];
 				int upperBound = endIpAddress[3];
+				ipsToScan = upperBound - lowerBound;
 
 				for (int i = lowerBound; i <= upperBound; i++) {
 						String ip = strtIpAddress[0] + "." + strtIpAddress[1] + "." + strtIpAddress[2] + "." + i;
@@ -68,45 +82,92 @@ protected List<InetAddress> doInBackground(String... params) {
 				catch (UnknownHostException e)
 				{ e.printStackTrace(); }
 		}
+		List<IpInfo> ipInfos = new ArrayList<IpInfo>();
+		
+		for(InetAddress in : addresses) {
+						try
+						{
+								if (in.isReachable(500))
+								{ 
+										progressBarStatus += 100/ipsToScan;
+										publishProgress(progressBarStatus);
+										String ipAddress = getIpAddress(in.getAddress());
+										ipInfos.add(new IpInfo(ipAddress, in.getCanonicalHostName(),
+																					 "Responded OK.", 0, 0));
+								}
+								else
+								{ 
+										String ipAddress = getIpAddress(in.getAddress());
+										ipInfos.add(new IpInfo(ipAddress, in.getCanonicalHostName(),
+																					 "No response: Time out", 0, 0));
+								}
+						}
+						catch (IOException e)
+						{}
+				
+				 
+		}
+		PingSweepActivity.setIpInfoList(ipInfos);
 		return addresses;
 		
 } 
 @Override 
 protected void onPostExecute(List<InetAddress> result) { 
-			List<IpInfo> ipInfos = new ArrayList<IpInfo>();
-			int num = 0;
-			StringBuilder sb = new StringBuilder();
-			for(InetAddress in : result) {
-					try
-					{
-							if (in.isReachable(5000))
-							{ 
-									byte[] ip = in.getAddress();
-									for(int i = 0; i < ip.length; i++) {
-										sb.append(Byte.toString(ip[i]));
-										sb.append(".");
-										}
-									ipInfos.add(new IpInfo(sb.substring(0, sb.length() - 1), in.getCanonicalHostName(),
-									"Responded OK.", 0,0));
-							}
-							else
-							{ 
-									byte[] ip = in.getAddress();
-									for(int i = 0; i < ip.length; i++) {
-											sb.append(Byte.toString(ip[i]));
-											sb.append(".");
-									}
-									ipInfos.add(new IpInfo(sb.substring(0, sb.length() - 1), in.getCanonicalHostName(),
-																				 "No response: Time out", 0,0));
-							}
-					}
-					catch (IOException e)
-					{  e.printStackTrace(); } 
-			}
+		progressBar.dismiss();
+		Toast.makeText(context, "IP list size: " + result.size(), Toast.LENGTH_LONG).show();
+		Toast.makeText(context, "IP info list size: " + PingSweepActivity.getipInfoList().size(), Toast.LENGTH_LONG).show();
 	} 
 @Override 
-protected void onPreExecute() { } 
-@Override protected void onProgressUpdate(Void... values) { } 
+protected void onPreExecute() {
+	/*
+		NetworkInfo info = connManager.getActiveNetworkInfo(); 
+		int netType = info.getType(); 
+		int netSubtype = info.getSubtype(); 
+		if (netType == ConnectivityManager.TYPE_WIFI || netType == ConnectivityManager.TYPE_WIMAX) { 
+		//no restrictions, do some networking 
+				WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+				WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+				int ipAddress = wifiInfo.getIpAddress();
+				byte[] bytes = BigInteger.valueOf(ipAddress).toByteArray();
+				try
+				{
+						InetAddress addr = InetAddress.getByAddress(bytes);
+						nif = NetworkInterface.getByInetAddress(addr);
+				}
+				catch (UnknownHostException e)
+				{}
+				catch (SocketException e)
+				{}
+				Log.e("MyTemp", nif.getDisplayName());
+		} */
+		
+		// prepare for a progress bar dialog 
+		progressBar = new ProgressDialog(context); 
+		progressBar.setCancelable(true); 
+		progressBar.setMessage("Pinging IPs ..."); 
+		progressBar.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL); 
+		progressBar.setProgress(0); 
+		progressBar.setMax(100); 
+		progressBar.show();
+	} 
+@Override protected void onProgressUpdate(Integer... values) { 
+		progressBar.setProgress(values[0]);
+	} 
+
+	
+		/** * Convert raw IP address to string. 
+		* * @param rawBytes raw IP address. 
+		* @return a string representation of the raw ip address. */
+		public String getIpAddress(byte[] rawBytes) { 
+		int i = 4; 
+		String ipAddress = ""; 
+		for (byte raw : rawBytes) { 
+			ipAddress += (raw & 0xFF); 
+			if (--i > 0) { ipAddress += "."; }
+		} 
+		
+		return ipAddress; 
+	}
 }
 		
 public class PingSweepActivity extends FragmentActivity implements OnEditorActionListener,  IpListFragment.OnIpSelectedListener
@@ -130,12 +191,12 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
         setContentView(R.layout.ip_main);
 				
 				pingButton = (Button) findViewById(R.id.ping_button);
-				pingButton.setEnabled(false);
+				//pingButton.setEnabled(false);
 				pingButton.setOnClickListener(new View.OnClickListener(){
 						@Override
 						public void onClick(View v) {
 									Toast.makeText(getApplication(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
-									LoadIpsTask task = new LoadIpsTask();
+									LoadIpsTask task = new LoadIpsTask(v.getContext());
 									task.execute(ips[0],ips[1]);
 								try
 								{
@@ -259,11 +320,13 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 								switch (viewId) {
 										case R.id.starting_ip_address:
 										  ips[0] = strtIpText.getText().toString();
-											pingButton.setEnabled(true);
+											Toast.makeText(this, ips[0], Toast.LENGTH_SHORT).show();
+											//pingButton.setEnabled(true);
 											endIpText.requestFocus();
 									 		break;
 										case R.id.ending_ip_address:
 											ips[1] = endIpText.getText().toString();
+											Toast.makeText(this, ips[1], Toast.LENGTH_SHORT).show();
 										break;
 									}
 									return true; // consume
