@@ -41,7 +41,6 @@ final class LoadIpsTask extends AsyncTask<String, Integer, List<InetAddress>> {
 @Override
 protected List<InetAddress> doInBackground(String... params) { 
 		
-		
 		ip1 = params[0];
 		ip2 = params[1];
 		String[] octets1 = null;
@@ -67,6 +66,8 @@ protected List<InetAddress> doInBackground(String... params) {
 						String ip = strtIpAddress[0] + "." + strtIpAddress[1] + "." + strtIpAddress[2] + "." + i;
 						try
 						{
+								progressBarStatus += 100/ipsToScan;
+								publishProgress(progressBarStatus);
 								addresses.add(InetAddress.getByName(ip));
 						}
 						catch (UnknownHostException e)
@@ -78,6 +79,7 @@ protected List<InetAddress> doInBackground(String... params) {
 				try
 				{
 						addresses.add(InetAddress.getByName(ip));
+						publishProgress(100);
 				}
 				catch (UnknownHostException e)
 				{ e.printStackTrace(); }
@@ -89,8 +91,7 @@ protected List<InetAddress> doInBackground(String... params) {
 						{
 								if (in.isReachable(500))
 								{ 
-										progressBarStatus += 100/ipsToScan;
-										publishProgress(progressBarStatus);
+										
 										String ipAddress = getIpAddress(in.getAddress());
 										ipInfos.add(new IpInfo(ipAddress, in.getCanonicalHostName(),
 																					 "Responded OK.", 0, 0));
@@ -107,7 +108,7 @@ protected List<InetAddress> doInBackground(String... params) {
 				
 				 
 		}
-		PingSweepActivity.setIpInfoList(ipInfos);
+		NetToolsActivity.setIpInfoList(ipInfos);
 		return addresses;
 		
 } 
@@ -115,7 +116,7 @@ protected List<InetAddress> doInBackground(String... params) {
 protected void onPostExecute(List<InetAddress> result) { 
 		progressBar.dismiss();
 		Toast.makeText(context, "IP list size: " + result.size(), Toast.LENGTH_LONG).show();
-		Toast.makeText(context, "IP info list size: " + PingSweepActivity.getipInfoList().size(), Toast.LENGTH_LONG).show();
+		Toast.makeText(context, "IP info list size: " + NetToolsActivity.getipInfoList().size(), Toast.LENGTH_LONG).show();
 	} 
 @Override 
 protected void onPreExecute() {
@@ -170,14 +171,14 @@ protected void onPreExecute() {
 	}
 }
 		
-public class PingSweepActivity extends FragmentActivity implements OnEditorActionListener,  IpListFragment.OnIpSelectedListener
+public class NetToolsActivity extends FragmentActivity implements OnEditorActionListener,  IpListFragment.OnIpSelectedListener
 {
 		private final int range = 255;
-	  private final  String TAG = "PingSweepActivity";
+	  private final  String TAG = "NetToolsActivity";
     private EditText strtIpText = null;
     private EditText endIpText = null;
 		private  Button pingButton = null;
-	  private String[] ips = new String[2];
+	  private String[] ips = {null,null};
 		private static List<InetAddress> ipList = new ArrayList<InetAddress>();
 	  public static List<InetAddress> getIpList() { return ipList;	}
 		private static List<IpInfo> ipInfoList = new ArrayList<IpInfo>();
@@ -190,30 +191,42 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ip_main);
 				
-				pingButton = (Button) findViewById(R.id.ping_button);
-				//pingButton.setEnabled(false);
-				pingButton.setOnClickListener(new View.OnClickListener(){
-						@Override
-						public void onClick(View v) {
-									Toast.makeText(getApplication(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
-									LoadIpsTask task = new LoadIpsTask(v.getContext());
-									task.execute(ips[0],ips[1]);
-								try
-								{
-										ipList = task.get();
-								}
-								catch (ExecutionException e)
-								{ e.printStackTrace(); }
-								catch (InterruptedException e)
-								{ e.printStackTrace(); }
-								IpListFragment.setAdapterData(ipList);
-								updateAdapter();
-						}
-				});
-
+				FileManager.manageDirectory(true);
+			
 				strtIpText = (EditText) findViewById(R.id.starting_ip_address);
 				endIpText = (EditText) findViewById(R.id.ending_ip_address); 
+				
+				strtIpText.setOnFocusChangeListener(new OnFocusChangeListener() { 
+					@Override
+					public void onFocusChange(View v, boolean hasFocus) { 
+						EditText et = (EditText)v;
+						if(hasFocus) {
+								InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+								imm.showSoftInput(et, InputMethodManager.SHOW_IMPLICIT);
+						}
+						else {
+								if(validateIp(et.getText().toString()))
+									ips[0] = et.getText().toString();
+						}
+				
+					}
+				});
+				endIpText.setOnFocusChangeListener(new OnFocusChangeListener() { 
+								@Override
+								public void onFocusChange(View v, boolean hasFocus) { 
+										EditText et = (EditText)v;
+										if(hasFocus) {
+												InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+												imm.showSoftInput(et, InputMethodManager.SHOW_IMPLICIT);
+										}
+										else {
+												if(validateIp(et.getText().toString()))
+													ips[1] = et.getText().toString();
+										}
 
+								}
+						});
+				
 				InputFilter[] filters = new InputFilter[1];
 				filters[0] = new InputFilter() { 
 						public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
@@ -240,6 +253,39 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 				endIpText.setFilters(filters);
 				endIpText.setOnEditorActionListener(this);
 
+				pingButton = (Button) findViewById(R.id.ping_button);
+				//pingButton.setEnabled(false);
+				pingButton.setOnClickListener(new View.OnClickListener(){
+								@Override
+								public void onClick(View v) {
+										if(validateIp(strtIpText.getText().toString())) {
+												ips[0] = strtIpText.getText().toString();
+										}
+										if(validateIp(endIpText.getText().toString())) {
+												ips[1] = endIpText.getText().toString();
+										}
+										if(ips[0] !=  null) {		
+												Toast.makeText(v.getContext(),"Ping button clicked.", Toast.LENGTH_SHORT).show();
+										LoadIpsTask task = new LoadIpsTask(v.getContext());
+										task.execute(ips[0],ips[1]);
+										try
+										{
+												ipList = task.get();
+										}
+										catch (ExecutionException e)
+										{ e.printStackTrace(); }
+										catch (InterruptedException e)
+										{ e.printStackTrace(); }
+										IpListFragment.setAdapterData(ipList);
+										updateAdapter();
+										}
+										else {
+												Toast.makeText(v.getContext(),"Please enter a beginning IP address.", Toast.LENGTH_LONG).show();
+												strtIpText.requestFocus();
+										}
+								}
+						});
+				
 				// Check whether the activity is using the layout version with
         // the fragment_container FrameLayout. If so, we must add the first fragment
         if (findViewById(R.id.fragment_container) != null) {
@@ -266,11 +312,29 @@ public class PingSweepActivity extends FragmentActivity implements OnEditorActio
 		}
     	@Override
     	public void onResume() {
-    		super.onResume();
-			InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-			imm.showSoftInput(strtIpText, InputMethodManager.SHOW_IMPLICIT);
-    		
+    		super.onResume();	
     	}
+			
+		@Override 
+		public void onSaveInstanceState(Bundle savedInstanceState) { 
+		super.onSaveInstanceState(savedInstanceState); 
+		// Save UI state changes to the savedInstanceState. 
+		// This bundle will be passed to onCreate if the process is 
+		// killed and restarted.
+			FileManager.saveData(ipList);
+		}
+		
+		
+		@Override
+		public void onRestoreInstanceState(Bundle savedInstanceState) {
+				ipList = FileManager.restoreData();
+				IpListFragment.setAdapterData(ipList);
+				updateAdapter();
+				
+				
+				
+		}
+		
 		// Check whole ip address:
 		private boolean validateIp(final String ip) { 
 				Log.i(TAG, " Validating: " + ip);

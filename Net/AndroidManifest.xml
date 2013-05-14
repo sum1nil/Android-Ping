@@ -6,7 +6,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-		<uses-sdk 
+		<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-sdk 
         android:minSdkVersion="8" 
         android:targetSdkVersion="10" />
     <application
@@ -15,7 +16,7 @@
         android:label="@string/app_name" >
         <activity
             android:label="@string/app_name"
-            android:name=".PingSweepActivity" >
+            android:name=".NetToolsActivity" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
 

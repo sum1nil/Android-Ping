@@ -5,7 +5,7 @@
     android:orientation="vertical" >
 		<EditText
 				android:id="@+id/starting_ip_address"
-				android:layout_width="wrap_content"
+				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:digits="0123456789."
 				android:hint="@string/start_address_label"
@@ -16,7 +16,7 @@
 				android:singleLine="true"	/>
 		<EditText
 				android:id="@+id/ending_ip_address"
-				android:layout_width="wrap_content"
+				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:digits="0123456789."
 				android:hint="@string/end_address_label"
@@ -26,7 +26,7 @@
 		
 		<Button 
 				android:id="@+id/ping_button"
-				android:text="Ping" 
+				android:text="@string/ping_label" 
 				android:layout_height="wrap_content"
 				android:layout_width="match_parent"
 				android:background="@drawable/ping_button_selector"

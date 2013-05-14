@@ -6,7 +6,7 @@
 		
 		<include layout="@layout/input_row"
 				android:layout_height="match_parent"
-				android:layout_weight=".5"
+				android:layout_weight="1"
 				android:layout_width="0dp"/>
 
     <fragment android:name="com.wly.net.IpListFragment"
@@ -17,7 +17,7 @@
 
     <fragment android:name="com.wly.net.IpInfoFragment"
 				android:id="@+id/ip_info_fragment"
-				android:layout_weight="2"
+				android:layout_weight="1"
 				android:layout_width="0dp"
 				android:layout_height="match_parent" />
 		
